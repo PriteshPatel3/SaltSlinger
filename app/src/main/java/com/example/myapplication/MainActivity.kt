@@ -1,10 +1,20 @@
 package com.example.myapplication
 
+import android.graphics.Rect
 import android.os.Bundle
+import android.view.TouchDelegate
+import android.view.View
+import android.widget.Button
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -34,95 +45,122 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-var x: Int = 0
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Hide status bar (NEW)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        )
+
         setContent {
-            CounterButtons()
+            GameResourceTracker()
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Surface(color = Color.Cyan) {
-        Text(
-            text = "Hi, my name is $name!",
-            modifier = modifier
-        )
-    }
-}
-@Composable
-fun FilledButtonExample(onClick: () -> Unit) {
-    Button(onClick = { onClick() }) {
-        Text("Filled")
-    }
-}
+fun GameResourceTracker() {
+    var spirit by remember { mutableStateOf(0) }
+    var prowess by remember { mutableStateOf(0) }
+    var treasure by remember { mutableStateOf(0) }
+    var extraResource by remember { mutableStateOf(0) }
 
-@Composable
-fun CounterButtons() {
-    // Step 1: Create a state variable to track the count
-    var count by remember { mutableStateOf(0) }
-
-    // Step 2: Layout the UI using Column
-    Column(
+    // Row to arrange everything horizontally
+    FlowRow(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(25.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        // Step 3: Display the count
-        Text(
-            text = "Count: $count",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
+        CounterColumn("Spirit", spirit, { spirit++ }, { spirit-- }, Modifier.weight(1f))
+        CounterColumn("Prowess", prowess, { prowess++ }, { prowess-- } , Modifier.weight(1f))
+        CounterColumn("Treasure", treasure, { treasure++ }, { treasure-- } , Modifier.weight(1f))
+        CounterColumn("Extra", extraResource, { extraResource++ }, { extraResource-- } , Modifier.weight(1f)) // Fourth column
+    }
+}
 
-        Spacer(modifier = Modifier.height(16.dp)) // Space between text and buttons
-
-        // Step 4: Create a row to hold the "-" and "+" buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly // Space buttons evenly
+@Composable
+fun CounterColumn(
+    label: String,
+    count: Int,
+    onIncrement: () -> Unit,
+    onDecrement: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+    ) {
+        // Decrement Button with expanded hitbox
+        Box(
+            modifier = Modifier
+                // Increase the clickable area (e.g., 48.dp is Material Design minimum)
+                .size(60.dp) // Larger touch area
+                .clickable(onClick = onDecrement) // Handle click
         ) {
-            // Minus Button (-)
             Button(
-                onClick = { count-- },
-                modifier = Modifier.size(56.dp) // Adjust size as needed
+                onClick = onDecrement, // Empty onClick since parent Box handles it
+                modifier = Modifier
+                    .size(30.dp) // Visible size remains 30.dp
+                    .align(Alignment.Center), // Center within the larger hitbox
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                contentPadding = PaddingValues(0.dp) // Adjust padding
             ) {
                 Text(
                     text = "-",
-                    fontSize = 32.sp // Adjust font size as needed
+                    fontSize = 22.sp
                 )
             }
-
-            // Plus Button (+)
-            CircularButton(
-                icon = Icons.Default.Add, // Use "+" icon
-                onClick = { count++ }
-            )
         }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = label, fontSize = 20.sp, color = Color.Black)
+            Text(text = count.toString(), fontSize = 24.sp, color = Color.Black)
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Increment Button with expanded hitbox
+        CircularButton(
+            icon = Icons.Default.Add,
+            onClick = onIncrement
+        )
     }
 }
 
-// Reusable function to create circular buttons
 @Composable
-fun CircularButton(icon: ImageVector, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        shape = CircleShape,
-        colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
-        modifier = Modifier.size(56.dp), // Button size
-        contentPadding = PaddingValues(8.dp) // Allow larger icon
+fun CircularButton(
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(60.dp) // Larger touch area
+            .clickable(onClick = onClick) // Handle click
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = "Button",
-            tint = Color.White,
-            modifier = Modifier.size(32.dp) // Bigger icon
-        )
+        Button(
+            onClick = onClick, // Empty onClick since parent Box handles it
+            shape = CircleShape,
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
+            modifier = Modifier
+                .size(30.dp) // Visible size remains 30.dp
+                .align(Alignment.Center), // Center within the larger hitbox
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = "Button",
+                tint = Color.White,
+                modifier = Modifier.size(22.dp)
+            )
+        }
     }
 }
