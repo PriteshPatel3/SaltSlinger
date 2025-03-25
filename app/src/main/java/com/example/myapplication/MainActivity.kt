@@ -9,6 +9,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +21,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,8 +30,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -41,7 +49,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -67,18 +77,102 @@ fun GameResourceTracker() {
     var prowess by remember { mutableStateOf(0) }
     var treasure by remember { mutableStateOf(0) }
     var extraResource by remember { mutableStateOf(0) }
+    var isPanelExpanded by remember { mutableStateOf(false) } // State for panel
 
-    // Row to arrange everything horizontally
-    FlowRow(
+    // Animate the panel width
+    val panelWidth by animateDpAsState(
+        targetValue = if (isPanelExpanded) 200.dp else 60.dp, // Expanded: 200dp, Shrunk: 60dp
+//        animationSpec = tween(durationMillis = 300) // Smooth animation
+    )
+
+    Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(25.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+            .background(Color.LightGray) // Optional: distinguish the layout
     ) {
-        CounterColumn("Spirit", spirit, { spirit++ }, { spirit-- }, Modifier.weight(1f))
-        CounterColumn("Prowess", prowess, { prowess++ }, { prowess-- } , Modifier.weight(1f))
-        CounterColumn("Treasure", treasure, { treasure++ }, { treasure-- } , Modifier.weight(1f))
-        CounterColumn("Extra", extraResource, { extraResource++ }, { extraResource-- } , Modifier.weight(1f)) // Fourth column
+        // Side Panel
+        Box(
+            modifier = Modifier
+                .width(panelWidth)
+                .fillMaxHeight()
+                .background(Color.DarkGray)
+                .padding(20.dp)
+        ) {
+            Column(
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Toggle Button
+                Button(
+                    onClick = { isPanelExpanded = !isPanelExpanded },
+                    modifier = Modifier
+                        .padding(bottom = 8.dp)
+                        .size(if (isPanelExpanded) 60.dp else 40.dp), // Slightly smaller when shrunk
+                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+                ) {
+                    Icon(
+                        imageVector = if (isPanelExpanded) Icons.Default.ArrowBack else Icons.Default.ArrowForward,
+                        contentDescription = "Toggle Panel",
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+
+                // Panel Content (visible when expanded)
+                if (isPanelExpanded) {
+                    Text(
+                        text = "Side Panel",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                    // Add more content here, e.g., buttons, text, etc.
+                    Button(
+                        onClick = { /* Add action */ },
+                        modifier = Modifier.padding(top = 16.dp)
+                    ) {
+                        Text("Action")
+                    }
+                }
+            }
+        }
+
+        // Main Content Column
+        Column(
+            modifier = Modifier
+                .weight(1f) // Take remaining space
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.SpaceBetween // Space out children
+        ) {
+
+
+        // Main Trackers (Resource Trackers)
+        FlowRow(
+            modifier = Modifier
+//                .weight(1f) // Take remaining space
+                .padding(top = 25.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            CounterColumn("Spirit", spirit, { spirit++ }, { spirit-- }, Modifier.weight(1f))
+            CounterColumn("Prowess", prowess, { prowess++ }, { prowess-- }, Modifier.weight(1f))
+            CounterColumn("Treasure", treasure, { treasure++ }, { treasure-- }, Modifier.weight(1f))
+            CounterColumn("Extra", extraResource, { extraResource++ }, { extraResource-- }, Modifier.weight(1f))
+        }
+
+        FlowRow(
+            modifier = Modifier
+//                .weight(1f) // Take remaining space
+                .padding(25.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalArrangement = Arrangement.Bottom // Align content to bottom
+        ) {
+            CastColumn("Creature", {})
+            CastColumn("Ins/Soc", {})
+            CastColumn("Non Creature", {})
+        }
+        }
     }
 }
 
@@ -162,5 +256,33 @@ fun CircularButton(
                 modifier = Modifier.size(22.dp)
             )
         }
+    }
+}
+
+@Composable
+fun CastColumn(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = Color.Blue, // Default background color
+    contentColor: Color = Color.White,  // Default text/icon color
+    cornerRadius: Dp = 8.dp,            // Default corner radius
+    padding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 8.dp), // Default padding
+    textStyle: TextStyle = TextStyle(fontSize = 16.sp) // Default text style
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.padding(12.dp),
+        shape = RoundedCornerShape(cornerRadius), // Rounded corners
+        colors = ButtonDefaults.buttonColors(
+            containerColor = backgroundColor,
+            contentColor = contentColor
+        ),
+        contentPadding = padding
+    ) {
+        Text(
+            text = text,
+            style = textStyle
+        )
     }
 }
