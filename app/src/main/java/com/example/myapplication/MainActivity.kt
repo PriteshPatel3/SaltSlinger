@@ -65,7 +65,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-data class Item(val id: Int, val name: String, val code: String,val trackerType: String)
+data class Item(
+    val id: Int,
+    val name: String,
+    val code: String,
+    val resourceType: String, // e.g., "spirit", "monk", "treasure"
+    val baseIncrement: Int = 1, // Default increment
+    val synergyRules: (Map<String, Boolean>) -> Int = { 0 } // Additional increment based on other items
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -99,12 +106,17 @@ fun GameResourceTracker() {
 
     // This inits random items with item class structure
     val items = listOf(
-        Item(1, "Kykar", "kykar", "spiritToken"),
-        Item(2, "Storm Kiln Artist", "skArtist","treasureToken"),
-        Item(3, "Harmonic Prodigy", "hProdigy","wizTriggerAdditional"),
-        Item(4, "Veyran", "veyran","spellTriggerAdditional"),
-        Item(5, "Storm", "storm","spellTracker"),
-        Item(6, "Monastary Mentor", "mMentor","monkToken"),
+        Item(1, "Kykar", "kykar", "spirit", 1, { states ->
+            var extra = 0
+            if (states["hProdigy"] == true) extra += 1 // Harmonic doubles it
+            if (states["veyran"] == true) extra += 1  // Veyran adds another
+            extra
+        }),
+        Item(2, "Harmonic Prodigy", "hProdigy", "none", 0), // No direct resource, just synergy
+        Item(3, "Veyran", "veyran", "none", 0), // No direct resource, just synergy
+        Item(4, "Monastery Mentor", "mMentor", "monk", 1, { states ->
+            if (states["hProdigy"] == true) 1 else 0 // Harmonic doubles, Veyran has no effect
+        })
     )
 
     // States of SidePanelItem are tracked here
@@ -195,8 +207,9 @@ fun GameResourceTracker() {
             CounterColumn("Prowess", prowess, { prowess++ }, { prowess-- }, Modifier.weight(1f))
             CounterColumn("Storm", storm, { storm++ }, { storm-- }, Modifier.weight(1f))
 
-            if (checkedStates["kykar"] == true){
-                CounterColumn("Spirit", spirit, { spirit++ }, { spirit-- }, Modifier.weight(1f))
+            if (checkedStates["kykar"] == true) {
+                val spiritIncrement = calculateIncrement("spirit", checkedStates, items)
+                CounterColumn("Spirit", spirit, { spirit += spiritIncrement }, { spirit-- }, Modifier.weight(1f))
             }
             if (checkedStates["skArtist"] == true){
                 CounterColumn("Treasure", treasure, { treasure++ }, { treasure-- }, Modifier.weight(1f))
@@ -221,6 +234,16 @@ fun GameResourceTracker() {
         }
     }
 }
+fun calculateIncrement(resourceType: String, checkedStates: Map<String, Boolean>, items: List<Item>): Int {
+    var totalIncrement = 0
+    items.filter { checkedStates[it.code] == true }.forEach { item ->
+        if (item.resourceType == resourceType) {
+            totalIncrement += item.baseIncrement + item.synergyRules(checkedStates)
+        }
+    }
+    return totalIncrement
+}
+
 @Composable
 fun SidePanelItem(
     item: Item,
