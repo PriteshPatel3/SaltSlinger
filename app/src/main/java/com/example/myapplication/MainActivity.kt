@@ -29,17 +29,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +64,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+data class Item(val id: Int, val name: String)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -108,36 +118,35 @@ fun GameResourceTracker() {
                     onClick = { isPanelExpanded = !isPanelExpanded },
                     modifier = Modifier
                         .padding(bottom = 8.dp)
-                        .size(if (isPanelExpanded) 60.dp else 40.dp), // Slightly smaller when shrunk
-                    shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+                        .size(if (isPanelExpanded) 50.dp else 40.dp), // Increase size for visibility
+//                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
+                    contentPadding = PaddingValues(0.dp) // Remove default padding
                 ) {
                     Icon(
-                        imageVector = if (isPanelExpanded) Icons.Default.ArrowBack else Icons.Default.ArrowForward,
+                        imageVector = Icons.Default.Menu, // No need for the if-else
                         contentDescription = "Toggle Panel",
                         tint = Color.White,
-                        modifier = Modifier.size(30.dp)
+                        modifier = Modifier.size(30.dp) // Reduce size to fit inside button
                     )
                 }
-
+                val items = List(10) { Item(it, "Item $it") } // Generate a sample list
                 // Panel Content (visible when expanded)
                 if (isPanelExpanded) {
-                    Text(
-                        text = "Side Panel",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
-                    // Add more content here, e.g., buttons, text, etc.
-                    Button(
-                        onClick = { /* Add action */ },
-                        modifier = Modifier.padding(top = 16.dp)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f) // Take remaining space
+                            .verticalScroll(rememberScrollState())
+                            .fillMaxHeight(),
                     ) {
-                        Text("Action")
+                        items.forEach {item ->
+                            SidePanelItem(item)
+                        }
                     }
                 }
             }
         }
+
 
         // Main Content Column
         Column(
@@ -146,7 +155,6 @@ fun GameResourceTracker() {
                 .fillMaxHeight(),
             verticalArrangement = Arrangement.SpaceBetween // Space out children
         ) {
-
 
         // Main Trackers (Resource Trackers)
         FlowRow(
@@ -173,6 +181,33 @@ fun GameResourceTracker() {
             CastColumn("Non Creature", {})
         }
         }
+    }
+}
+@Composable
+fun SidePanelItem(item: Item) {
+    var isChecked by remember { mutableStateOf(false) } // Ensure individual state
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    )
+    {
+        Text(
+            text = "Kykar",
+            color = Color.White, // Ensure visible text
+            fontSize = 20.sp,
+            modifier = Modifier
+                .weight(1f)
+                .wrapContentWidth(Alignment.Start)
+        )
+
+        Checkbox(
+            checked = isChecked,
+            onCheckedChange = { isChecked = it }
+        )
     }
 }
 
