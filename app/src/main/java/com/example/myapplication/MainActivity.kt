@@ -51,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -64,7 +65,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-data class Item(val id: Int, val name: String)
+data class Item(val id: Int, val name: String, val code: String,val trackerType: String)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,14 +87,32 @@ fun GameResourceTracker() {
     var spirit by remember { mutableStateOf(0) }
     var prowess by remember { mutableStateOf(0) }
     var treasure by remember { mutableStateOf(0) }
+    var storm by remember { mutableStateOf(0) }
+    var monk by remember { mutableStateOf(0) }
     var extraResource by remember { mutableStateOf(0) }
     var isPanelExpanded by remember { mutableStateOf(false) } // State for panel
 
     // Animate the panel width
     val panelWidth by animateDpAsState(
         targetValue = if (isPanelExpanded) 200.dp else 60.dp, // Expanded: 200dp, Shrunk: 60dp
-//        animationSpec = tween(durationMillis = 300) // Smooth animation
     )
+
+    // This inits random items with item class structure
+    val items = listOf(
+        Item(1, "Kykar", "kykar", "spiritToken"),
+        Item(2, "Storm Kiln Artist", "skArtist","treasureToken"),
+        Item(3, "Harmonic Prodigy", "hProdigy","wizTriggerAdditional"),
+        Item(4, "Veyran", "veyran","spellTriggerAdditional"),
+        Item(5, "Storm", "storm","spellTracker"),
+        Item(6, "Monastary Mentor", "mMentor","monkToken"),
+    )
+
+    // States of SidePanelItem are tracked here
+    val checkedStates = remember {
+        mutableStateMapOf<String, Boolean>().apply {
+            items.forEach { put(it.code, false) } // Initialize all as unchecked
+        }
+    }
 
     Row(
         modifier = Modifier
@@ -112,6 +131,7 @@ fun GameResourceTracker() {
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxSize()
+                    .verticalScroll(rememberScrollState())
             ) {
                 // Toggle Button
                 Button(
@@ -119,7 +139,6 @@ fun GameResourceTracker() {
                     modifier = Modifier
                         .padding(bottom = 8.dp)
                         .size(if (isPanelExpanded) 50.dp else 40.dp), // Increase size for visibility
-//                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
                     contentPadding = PaddingValues(0.dp) // Remove default padding
                 ) {
@@ -130,19 +149,29 @@ fun GameResourceTracker() {
                         modifier = Modifier.size(30.dp) // Reduce size to fit inside button
                     )
                 }
-                val items = List(10) { Item(it, "Item $it") } // Generate a sample list
+
                 // Panel Content (visible when expanded)
                 if (isPanelExpanded) {
-                    Column(
+
+
+                    Column (
                         modifier = Modifier
                             .weight(1f) // Take remaining space
                             .verticalScroll(rememberScrollState())
                             .fillMaxHeight(),
-                    ) {
-                        items.forEach {item ->
-                            SidePanelItem(item)
+                    ){
+                        items.forEach { item ->
+                            SidePanelItem(
+                                item = item,
+                                isChecked = checkedStates[item.code] ?: false, // Get state for this item
+                                onCheckedChange = { newValue ->
+                                    checkedStates[item.code] = newValue // Update state for this item
+                                    println("${item.name} is now ${if (newValue) "checked" else "unchecked"}")
+                                }
+                            )
                         }
                     }
+
                 }
             }
         }
@@ -163,9 +192,18 @@ fun GameResourceTracker() {
                 .padding(top = 25.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            CounterColumn("Spirit", spirit, { spirit++ }, { spirit-- }, Modifier.weight(1f))
             CounterColumn("Prowess", prowess, { prowess++ }, { prowess-- }, Modifier.weight(1f))
-            CounterColumn("Treasure", treasure, { treasure++ }, { treasure-- }, Modifier.weight(1f))
+            CounterColumn("Storm", storm, { storm++ }, { storm-- }, Modifier.weight(1f))
+
+            if (checkedStates["kykar"] == true){
+                CounterColumn("Spirit", spirit, { spirit++ }, { spirit-- }, Modifier.weight(1f))
+            }
+            if (checkedStates["skArtist"] == true){
+                CounterColumn("Treasure", treasure, { treasure++ }, { treasure-- }, Modifier.weight(1f))
+            }
+            if (checkedStates["mMentor"] == true){
+                CounterColumn("Monk", monk, { monk++ }, { monk-- }, Modifier.weight(1f))
+            }
             CounterColumn("Extra", extraResource, { extraResource++ }, { extraResource-- }, Modifier.weight(1f))
         }
 
@@ -184,29 +222,30 @@ fun GameResourceTracker() {
     }
 }
 @Composable
-fun SidePanelItem(item: Item) {
-    var isChecked by remember { mutableStateOf(false) } // Ensure individual state
-
+fun SidePanelItem(
+    item: Item,
+    isChecked: Boolean,           // State passed from parent
+    onCheckedChange: (Boolean) -> Unit  // Callback to update parent state
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-    )
-    {
+    ) {
         Text(
-            text = "Kykar",
-            color = Color.White, // Ensure visible text
-            fontSize = 20.sp,
+            text = item.name,
+            color = Color.White,
+            fontSize = 15.sp,
             modifier = Modifier
                 .weight(1f)
                 .wrapContentWidth(Alignment.Start)
         )
 
         Checkbox(
-            checked = isChecked,
-            onCheckedChange = { isChecked = it }
+            checked = isChecked,      // Use the passed state
+            onCheckedChange = onCheckedChange  // Forward changes to parent
         )
     }
 }
