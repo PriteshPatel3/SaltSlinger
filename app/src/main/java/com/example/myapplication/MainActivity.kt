@@ -1,16 +1,12 @@
 package com.example.myapplication
 
-import android.graphics.Rect
+import com.example.myapplication.getItemsByTriggerType
 import android.os.Bundle
-import android.view.TouchDelegate
-import android.view.View
-import android.widget.Button
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,35 +17,27 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,10 +48,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.reflect.KMutableProperty0
 
 data class Item(
     val id: Int,
@@ -71,8 +59,30 @@ data class Item(
     val code: String,
     val resourceType: String, // e.g., "spirit", "monk", "treasure"
     val baseIncrement: Int = 1, // Default increment
-    val synergyRules: (Map<String, Boolean>) -> Int = { 0 } // Additional increment based on other items
+    val triggerType: String, // what causes this Item to generate its resource
+    val synergyRules: (Map<String, Boolean>) -> Int = { 0 }, // Additional increment based on other items
 )
+
+// Define the data class outside of any composable
+data class GameResources(
+    val spirit: MutableState<Int> = mutableStateOf(0),
+    val prowess: MutableState<Int> = mutableStateOf(0),
+    val treasure: MutableState<Int> = mutableStateOf(0),
+    val storm: MutableState<Int> = mutableStateOf(0),
+    val monk: MutableState<Int> = mutableStateOf(0),
+    val extraResource: MutableState<Int> = mutableStateOf(0),
+    val isPanelExpanded: Boolean = false
+) {
+    // Optionally, keep your resourceMap for convenience
+    val resourceMap: Map<String, MutableState<Int>> = mapOf(
+        "spirit" to spirit,
+        "prowess" to prowess,
+        "treasure" to treasure,
+        "storm" to storm,
+        "monk" to monk,
+        "extraResource" to extraResource
+    )
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,12 +101,8 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GameResourceTracker() {
-    var spirit by remember { mutableStateOf(0) }
-    var prowess by remember { mutableStateOf(0) }
-    var treasure by remember { mutableStateOf(0) }
-    var storm by remember { mutableStateOf(0) }
-    var monk by remember { mutableStateOf(0) }
-    var extraResource by remember { mutableStateOf(0) }
+//    var gameResources by remember { mutableStateOf(GameResources()) }
+    val gameResources = remember { GameResources() }
     var isPanelExpanded by remember { mutableStateOf(false) } // State for panel
 
     // Animate the panel width
@@ -106,16 +112,30 @@ fun GameResourceTracker() {
 
     // This inits random items with item class structure
     val items = listOf(
-        Item(1, "Kykar", "kykar", "spirit", 1, { states ->
+        Item(1, "Kykar", "kykar", "spirit", 1, "noncreature", { states ->
             var extra = 0
             if (states["hProdigy"] == true) extra += 1 // Harmonic doubles it
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
         }),
-        Item(2, "Harmonic Prodigy", "hProdigy", "none", 0), // No direct resource, just synergy
-        Item(3, "Veyran", "veyran", "none", 0), // No direct resource, just synergy
-        Item(4, "Monastery Mentor", "mMentor", "monk", 1, { states ->
-            if (states["hProdigy"] == true) 1 else 0 // Harmonic doubles, Veyran has no effect
+        Item(2, "Harmonic Prodigy", "hProdigy", "none", 0, "none"), // No direct resource, just synergy
+        Item(3, "Veyran", "veyran", "none", 0, "none"), // No direct resource, just synergy
+        Item(4, "Monastery Mentor", "mMentor", "monk", 1, "noncreature", { states ->
+            var extra = 0
+            if (states["hProdigy"] == true) extra += 1 // Harmonic doubles, Veyran has no effect
+            extra
+        }),
+        Item(5, "Storm Kiln Artist", "skArtist", "treasure", 1, "magecraft", { states ->
+            var extra = 0
+            if (states["hProdigy"] == true) extra += 1
+            if (states["veyran"] == true) extra += 1  // Veyran adds another
+            extra
+        }),
+        Item(6, "Storm Kiln Artist2", "skArtist2", "treasure", 1, "magecraft", { states ->
+            var extra = 0
+            if (states["hProdigy"] == true) extra += 1
+            if (states["veyran"] == true) extra += 1  // Veyran adds another
+            extra
         })
     )
 
@@ -204,20 +224,20 @@ fun GameResourceTracker() {
                 .padding(top = 25.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            CounterColumn("Prowess", prowess, { prowess++ }, { prowess-- }, Modifier.weight(1f))
-            CounterColumn("Storm", storm, { storm++ }, { storm-- }, Modifier.weight(1f))
+            CounterColumn("Prowess", gameResources.prowess.value, { gameResources.prowess.value++ }, { gameResources.prowess.value-- }, Modifier.weight(1f))
+            CounterColumn("Storm", gameResources.storm.value, { gameResources.storm.value++ }, { gameResources.storm.value-- }, Modifier.weight(1f))
+            CounterColumn("Extra", gameResources.extraResource.value, { gameResources.extraResource.value++ }, { gameResources.extraResource.value-- }, Modifier.weight(1f))
 
             if (checkedStates["kykar"] == true) {
-                val spiritIncrement = calculateIncrement("spirit", checkedStates, items)
-                CounterColumn("Spirit", spirit, { spirit += spiritIncrement }, { spirit-- }, Modifier.weight(1f))
+//                CounterColumn("Spirit", spirit, { spirit += spiritIncrement }, { spirit-- }, Modifier.weight(1f))
+                CounterColumn("Spirit", gameResources.spirit.value, { gameResources.spirit.value++ }, { gameResources.spirit.value-- }, Modifier.weight(1f))
             }
             if (checkedStates["skArtist"] == true){
-                CounterColumn("Treasure", treasure, { treasure++ }, { treasure-- }, Modifier.weight(1f))
+                CounterColumn("Treasure", gameResources.treasure.value, { gameResources.treasure.value++ }, { gameResources.treasure.value-- }, Modifier.weight(1f))
             }
             if (checkedStates["mMentor"] == true){
-                CounterColumn("Monk", monk, { monk++ }, { monk-- }, Modifier.weight(1f))
+                CounterColumn("Monk", gameResources.monk.value, { gameResources.monk.value++ }, { gameResources.monk.value-- }, Modifier.weight(1f))
             }
-            CounterColumn("Extra", extraResource, { extraResource++ }, { extraResource-- }, Modifier.weight(1f))
         }
 
         FlowRow(
@@ -227,23 +247,37 @@ fun GameResourceTracker() {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalArrangement = Arrangement.Bottom // Align content to bottom
         ) {
-            CastColumn("Creature", {})
-            CastColumn("Ins/Soc", {})
-            CastColumn("Non Creature", {})
+//            CastColumn("Creature", {})
+            CastColumn("Ins/Soc", { cast("noncreature", gameResources, items, checkedStates ); cast("magecraft", gameResources, items, checkedStates ) })
+            CastColumn("Copy Ins/Soc", { cast("magecraft", gameResources, items, checkedStates ) })
+            CastColumn("Non Creature", { cast("noncreature", gameResources, items, checkedStates ) })
         }
         }
     }
 }
-fun calculateIncrement(resourceType: String, checkedStates: Map<String, Boolean>, items: List<Item>): Int {
+fun calculateIncrement(resourceType: String, checkedStates: Map<String, Boolean>, item: Item): Int {
     var totalIncrement = 0
-    items.filter { checkedStates[it.code] == true }.forEach { item ->
-        if (item.resourceType == resourceType) {
-            totalIncrement += item.baseIncrement + item.synergyRules(checkedStates)
-        }
+    if (item.resourceType == resourceType) {
+        totalIncrement += item.baseIncrement + item.synergyRules(checkedStates)
     }
     return totalIncrement
 }
 
+fun cast(
+    triggerType: String,
+    gameResources: GameResources,
+    items: List<Item>,
+    checkedStates: Map<String, Boolean>
+) {
+    val filtheredItems = getItemsByTriggerType(items, triggerType)
+        .filter { item -> checkedStates[item.code] == true }
+    filtheredItems.forEach { item ->
+        val resourceIncrement = calculateIncrement(item.resourceType, checkedStates, item)
+        gameResources.resourceMap[item.resourceType]?.let { resourceState ->
+            resourceState.value = resourceState.value + resourceIncrement
+        }
+    }
+}
 @Composable
 fun SidePanelItem(
     item: Item,

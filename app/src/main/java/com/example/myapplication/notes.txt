@@ -1,0 +1,3 @@
+Prowess - trigger on noncreature spell
+skArtist - magecraft - cast/copy instant or sorcery
+storm - any spell
