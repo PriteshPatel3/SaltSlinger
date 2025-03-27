@@ -29,3 +29,12 @@ fun cast(
         }
     }
 }
+
+fun castGeneral(
+    resourceType: String,
+    gameResources: GameResources,
+) {
+    gameResources.resourceMap[resourceType]?.let { resourceState ->
+        resourceState.value++
+    }
+}

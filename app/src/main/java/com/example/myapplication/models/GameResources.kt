@@ -22,7 +22,8 @@ data class GameResources(
     val storm: MutableState<Int> = mutableStateOf(0),
     val monk: MutableState<Int> = mutableStateOf(0),
     val extraResource: MutableState<Int> = mutableStateOf(0),
-    val isPanelExpanded: Boolean = false
+//    val isPanelExpanded: Boolean = false
+    var isPanelExpanded: MutableState<Boolean> = mutableStateOf(false)
 ) {
     val resourceMap: Map<String, MutableState<Int>> = mapOf(
         "spirit" to spirit,

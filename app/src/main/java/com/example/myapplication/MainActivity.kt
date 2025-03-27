@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.app.Application
 import com.example.myapplication.getItemsByTriggerType
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -42,6 +43,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,11 +54,19 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.reflect.KMutableProperty0
 import com.example.myapplication.models.GameResources
 import com.example.myapplication.models.Item
 import com.example.myapplication.cast
+import com.example.myapplication.castGeneral
+import com.example.myapplication.view.GameViewModel
+import dagger.hilt.android.HiltAndroidApp
+
 //import com.example.myapplication.
+
+@HiltAndroidApp
+class MyApp : Application()
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,12 +86,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GameResourceTracker() {
 //    var gameResources by remember { mutableStateOf(GameResources()) }
-    val gameResources = remember { GameResources() }
-    var isPanelExpanded by remember { mutableStateOf(false) } // State for panel
-
+    val viewModel: GameViewModel = viewModel()
+    val gameResources = viewModel.gameResources.value
+//    val gameResources = remember { GameResources() }
+//    var isPanelExpanded by remember { mutableStateOf(false) }
     // Animate the panel width
     val panelWidth by animateDpAsState(
-        targetValue = if (isPanelExpanded) 200.dp else 60.dp, // Expanded: 200dp, Shrunk: 60dp
+        targetValue = if (gameResources.isPanelExpanded.value) 200.dp else 60.dp, // Expanded: 200dp, Shrunk: 60dp
     )
 
     // This inits random items with item class structure
@@ -119,7 +131,16 @@ fun GameResourceTracker() {
     )
 
     // States of SidePanelItem are tracked here
-    val checkedStates = remember {
+    val checkedStates = rememberSaveable(
+        saver = listSaver(
+            save = { it.toList() },  // Convert state map to a list of pairs
+            restore = { list ->
+                mutableStateMapOf<String, Boolean>().apply {
+                    list.forEach { (key, value) -> put(key, value) }
+                }
+            }
+        )
+    ) {
         mutableStateMapOf<String, Boolean>().apply {
             items.forEach { put(it.code, false) } // Initialize all as unchecked
         }
@@ -146,10 +167,10 @@ fun GameResourceTracker() {
             ) {
                 // Toggle Button
                 Button(
-                    onClick = { isPanelExpanded = !isPanelExpanded },
+                    onClick = { gameResources.isPanelExpanded.value = !gameResources.isPanelExpanded.value },
                     modifier = Modifier
                         .padding(bottom = 8.dp)
-                        .size(if (isPanelExpanded) 50.dp else 40.dp), // Increase size for visibility
+                        .size(if (gameResources.isPanelExpanded.value) 50.dp else 40.dp), // Increase size for visibility
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
                     contentPadding = PaddingValues(0.dp) // Remove default padding
                 ) {
@@ -162,7 +183,7 @@ fun GameResourceTracker() {
                 }
 
                 // Panel Content (visible when expanded)
-                if (isPanelExpanded) {
+                if (gameResources.isPanelExpanded.value) {
 
 
                     Column (
@@ -205,7 +226,6 @@ fun GameResourceTracker() {
         ) {
             CounterColumn("Prowess", gameResources.prowess.value, { gameResources.prowess.value++ }, { gameResources.prowess.value-- }, Modifier.weight(1f))
             CounterColumn("Storm", gameResources.storm.value, { gameResources.storm.value++ }, { gameResources.storm.value-- }, Modifier.weight(1f))
-            CounterColumn("Extra", gameResources.extraResource.value, { gameResources.extraResource.value++ }, { gameResources.extraResource.value-- }, Modifier.weight(1f))
 
             if (checkedStates["kykar"] == true) {
 //                CounterColumn("Spirit", spirit, { spirit += spiritIncrement }, { spirit-- }, Modifier.weight(1f))
@@ -227,9 +247,22 @@ fun GameResourceTracker() {
             verticalArrangement = Arrangement.Bottom // Align content to bottom
         ) {
 //            CastColumn("Creature", {})
-            CastColumn("Ins/Soc", { cast("noncreature", gameResources, items, checkedStates ); cast("magecraft", gameResources, items, checkedStates ) })
-            CastColumn("Copy Ins/Soc", { cast("magecraft", gameResources, items, checkedStates ) })
-            CastColumn("Non Creature", { cast("noncreature", gameResources, items, checkedStates ) })
+            CastColumn("Ins/Soc", {
+                cast("noncreature", gameResources, items, checkedStates );
+                cast("magecraft", gameResources, items, checkedStates );
+                castGeneral("storm", gameResources);
+                castGeneral("prowess", gameResources);
+            })
+
+            CastColumn("Copy Ins/Soc", {
+                cast("magecraft", gameResources, items, checkedStates );
+            })
+
+            CastColumn("Non Creature", {
+                cast("noncreature", gameResources, items, checkedStates );
+                castGeneral("storm", gameResources);
+                castGeneral("prowess", gameResources);
+            })
         }
         }
     }
