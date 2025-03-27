@@ -3,11 +3,14 @@ package com.example.myapplication
 import android.app.Application
 import com.example.myapplication.getItemsByTriggerType
 import android.os.Bundle
+import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -49,7 +52,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -62,6 +68,7 @@ import com.example.myapplication.cast
 import com.example.myapplication.castGeneral
 import com.example.myapplication.view.GameViewModel
 import dagger.hilt.android.HiltAndroidApp
+import java.io.InputStream
 
 //import com.example.myapplication.
 
@@ -71,13 +78,22 @@ class MyApp : Application()
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Hide status bar (NEW)
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-        )
 
         setContent {
-            GameResourceTracker()
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Your main UI
+                GameResourceTracker()
+
+                // Logo at the bottom-right corner
+                Image(
+                    painter = painterResource(id = R.drawable.logo), // Ensure logo is in res/drawable
+                    contentDescription = "App Logo",
+                    modifier = Modifier
+                        .size(150.dp) // Adjust size as needed
+                        .align(Alignment.BottomEnd) // Align to bottom-right
+                        .padding(35.dp) // Add some margin
+                )
+            }
         }
     }
 }
@@ -263,6 +279,16 @@ fun GameResourceTracker() {
                 castGeneral("storm", gameResources);
                 castGeneral("prowess", gameResources);
             })
+//            val context = LocalContext.current
+//            val imageBitmap = context.assets.open("logo.png").use { inputStream: InputStream ->
+//                android.graphics.BitmapFactory.decodeStream(inputStream).asImageBitmap()
+//            }
+//
+//            Image(
+//                bitmap = imageBitmap,
+//                contentDescription = "App Logo",
+//                modifier = Modifier.size(100.dp)
+//            )
         }
         }
     }
