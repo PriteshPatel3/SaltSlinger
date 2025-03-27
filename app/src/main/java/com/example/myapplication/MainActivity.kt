@@ -52,37 +52,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.reflect.KMutableProperty0
-
-data class Item(
-    val id: Int,
-    val name: String,
-    val code: String,
-    val resourceType: String, // e.g., "spirit", "monk", "treasure"
-    val baseIncrement: Int = 1, // Default increment
-    val triggerType: String, // what causes this Item to generate its resource
-    val synergyRules: (Map<String, Boolean>) -> Int = { 0 }, // Additional increment based on other items
-)
-
-// Define the data class outside of any composable
-data class GameResources(
-    val spirit: MutableState<Int> = mutableStateOf(0),
-    val prowess: MutableState<Int> = mutableStateOf(0),
-    val treasure: MutableState<Int> = mutableStateOf(0),
-    val storm: MutableState<Int> = mutableStateOf(0),
-    val monk: MutableState<Int> = mutableStateOf(0),
-    val extraResource: MutableState<Int> = mutableStateOf(0),
-    val isPanelExpanded: Boolean = false
-) {
-    // Optionally, keep your resourceMap for convenience
-    val resourceMap: Map<String, MutableState<Int>> = mapOf(
-        "spirit" to spirit,
-        "prowess" to prowess,
-        "treasure" to treasure,
-        "storm" to storm,
-        "monk" to monk,
-        "extraResource" to extraResource
-    )
-}
+import com.example.myapplication.models.GameResources
+import com.example.myapplication.models.Item
+import com.example.myapplication.cast
+//import com.example.myapplication.
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -136,7 +109,13 @@ fun GameResourceTracker() {
             if (states["hProdigy"] == true) extra += 1
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
-        })
+        }),
+        Item(7, "Kykar Zehphyr Awakaner", "kykar-z-awak", "spirit", 1, "noncreature", { states ->
+            var extra = 0
+            if (states["hProdigy"] == true) extra += 1 // Harmonic doubles it
+            if (states["veyran"] == true) extra += 1  // Veyran adds another
+            extra
+        }),
     )
 
     // States of SidePanelItem are tracked here
@@ -255,29 +234,7 @@ fun GameResourceTracker() {
         }
     }
 }
-fun calculateIncrement(resourceType: String, checkedStates: Map<String, Boolean>, item: Item): Int {
-    var totalIncrement = 0
-    if (item.resourceType == resourceType) {
-        totalIncrement += item.baseIncrement + item.synergyRules(checkedStates)
-    }
-    return totalIncrement
-}
 
-fun cast(
-    triggerType: String,
-    gameResources: GameResources,
-    items: List<Item>,
-    checkedStates: Map<String, Boolean>
-) {
-    val filtheredItems = getItemsByTriggerType(items, triggerType)
-        .filter { item -> checkedStates[item.code] == true }
-    filtheredItems.forEach { item ->
-        val resourceIncrement = calculateIncrement(item.resourceType, checkedStates, item)
-        gameResources.resourceMap[item.resourceType]?.let { resourceState ->
-            resourceState.value = resourceState.value + resourceIncrement
-        }
-    }
-}
 @Composable
 fun SidePanelItem(
     item: Item,
