@@ -30,6 +30,15 @@ fun cast(
     }
 }
 
+fun endStep(
+    resourceType: String,
+    gameResources: GameResources,
+) {
+        gameResources.resourceMap[resourceType]?.let { resourceState ->
+            resourceState.value = 0
+        }
+}
+
 fun castGeneral(
     resourceType: String,
     gameResources: GameResources,

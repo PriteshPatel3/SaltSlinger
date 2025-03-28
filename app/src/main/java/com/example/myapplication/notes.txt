@@ -1,3 +1,18 @@
 Prowess - trigger on noncreature spell
-skArtist - magecraft - cast/copy instant or sorcery
 storm - any spell
+
+kykar
+kykar zephr
+skArtist - magecraft - cast/copy instant or sorcery
+Archmage emritus - magecraft
+archmage of runes - cast ins sor
+ashling, flame dancer - magecraft - 2nd ping 2 creature and oponent 3rd time add 4 red mana
+balmor, battlemage captain - cast ins sor
+monastery mentor - noncreature make monk
+jeskai ascendancy - noncreature, creature get +1/+1,  draw card discard a card
+whirldwind of thought - noncreature, draw a card
+
+
+pingers
+coruscation mage - noncreature ping 1 - offspring
+guttersnipe - cast ins soc ping 2

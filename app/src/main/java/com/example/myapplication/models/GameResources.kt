@@ -11,6 +11,7 @@ data class Item(
     val resourceType: String, // e.g., "spirit", "monk", "treasure"
     val baseIncrement: Int = 1, // Default increment
     val triggerType: String, // what causes this Item to generate its resource
+    val type: String, // generator or buff
     val synergyRules: (Map<String, Boolean>) -> Int = { 0 }, // Additional increment based on other items
 )
 
@@ -22,8 +23,14 @@ data class GameResources(
     val storm: MutableState<Int> = mutableStateOf(0),
     val monk: MutableState<Int> = mutableStateOf(0),
     val extraResource: MutableState<Int> = mutableStateOf(0),
+    val battlemage: MutableState<Int> = mutableStateOf(0),
+    val jAscendency: MutableState<Int> = mutableStateOf(0),
+    val birgiRed: MutableState<Int> = mutableStateOf(0),
 //    val isPanelExpanded: Boolean = false
-    var isPanelExpanded: MutableState<Boolean> = mutableStateOf(false)
+    var isPanelExpanded: MutableState<Boolean> = mutableStateOf(false),
+    var sectionGenerator: MutableState<Boolean> = mutableStateOf(false),
+    var sectionBuff: MutableState<Boolean> = mutableStateOf(false)
+//    var isPanelExpanded: MutableState<Boolean> = mutableStateOf(false)
 ) {
     val resourceMap: Map<String, MutableState<Int>> = mapOf(
         "spirit" to spirit,
@@ -31,6 +38,9 @@ data class GameResources(
         "treasure" to treasure,
         "storm" to storm,
         "monk" to monk,
-        "extraResource" to extraResource
+        "extraResource" to extraResource,
+        "battlemage buff" to battlemage,
+        "Jeskai Asc buff" to jAscendency,
+        "Birgi Red" to birgiRed,
     )
 }
