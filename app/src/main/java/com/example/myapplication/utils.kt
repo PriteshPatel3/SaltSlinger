@@ -6,7 +6,7 @@ fun getItemsByTriggerType(items: List<Item>, triggerType: String): List<Item> {
     return items.filter { it.triggerType == triggerType }
 }
 
-fun calculateIncrement(resourceType: String, checkedStates: Map<String, Boolean>, item: Item): Int {
+fun calculateIncrement(resourceType: Any, checkedStates: Map<String, Boolean>, item: Item): Int {
     var totalIncrement = 0
     if (item.resourceType == resourceType) {
         totalIncrement += item.baseIncrement + item.synergyRules(checkedStates)
@@ -37,6 +37,23 @@ fun endStep(
         gameResources.resourceMap[resourceType]?.let { resourceState ->
             resourceState.value = 0
         }
+}
+
+fun nonHaste2Haste(
+    items: List<Item>,
+    gameResources: GameResources,
+) {
+    for (item in items){
+       if (item.type=="creaturegenerator"){
+           gameResources.resourceMap[item.hasteResourceType]?.let { hasteState ->
+               gameResources.resourceMap[item.resourceType]?.let { resourceState ->
+                   hasteState.value += resourceState.value
+                   resourceState.value = 0
+               }
+           }
+
+       }
+    }
 }
 
 fun castGeneral(

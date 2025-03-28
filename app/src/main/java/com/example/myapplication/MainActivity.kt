@@ -118,27 +118,27 @@ fun GameResourceTracker() {
 
     // This inits random items with item class structure
     val items = listOf(
-        Item(1, "Kykar", "kykar", "spirit", 1, "noncreature", "generator",{ states ->
+        Item(1, "Kykar", "kykar", "spirit", "hasteSpirit", 1, "noncreature", "creaturegenerator",{ states ->
             var extra = 0
             if (states["hProdigy"] == true) extra += 1 // Harmonic doubles it
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
         }),
-        Item(2, "Harmonic Prodigy", "hProdigy", "none", 0, "none", "buff",), // No direct resource, just synergy
-        Item(3, "Veyran", "veyran", "none", 0, "none", "buff"), // No direct resource, just synergy
-        Item(4, "Monastery Mentor", "mMentor", "monk", 1, "noncreature", "generator",{ states ->
+        Item(2, "Harmonic Prodigy", "hProdigy", "none", "none", 0, "none", "buff",), // No direct resource, just synergy
+        Item(3, "Veyran", "veyran", "none", "none",0, "none", "buff"), // No direct resource, just synergy
+        Item(4, "Monastery Mentor", "mMentor", "monk", "hasteMonk", 1, "noncreature", "creaturegenerator",{ states ->
             var extra = 0
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             if (states["hProdigy"] == true) extra += 1 // Harmonic doubles, Veyran has no effect
             extra
         }),
-        Item(5, "Storm Kiln Artist", "skArtist", "treasure", 1, "magecraft", "generator",{ states ->
+        Item(5, "Storm Kiln Artist", "skArtist", "treasure", "none",1, "magecraft", "generator",{ states ->
             var extra = 0
             if (states["hProdigy"] == true) extra += 1
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
         }),
-        Item(7, "Kykar Zehphyr Awakaner", "kykar-z-awak", "spirit", 1, "noncreature", "generator",{ states ->
+        Item(7, "Kykar Zehphyr Awakaner", "kykar-z-awak", "spirit", "hasteSpirit", 1, "noncreature", "creaturegenerator",{ states ->
             var extra = 0
             if (states["hProdigy"] == true) extra += 1 // Harmonic doubles it
             if (states["veyran"] == true) extra += 1  // Veyran adds another
@@ -147,23 +147,23 @@ fun GameResourceTracker() {
 //        Item(7, "Archmage Emritus", "aEmritus", "draw", 1, "magecraft", "buff"),
 //        Item(7, "Archmage of runes", "aRunes", "draw", 1, "instsor", "buff"),
 //        Item(7, "Ashling flame dancer", "afDancer", "discarddraw", 1, "magecraft", "buff"),
-        Item(7, "Balmor battlemage captain", "bbCaptain", "battlemage buff", 1, "instsor", "buff",{ states ->
+        Item(7, "Balmor battlemage captain", "bbCaptain", "battlemage buff", "none",1, "instsor", "buff",{ states ->
             var extra = 0
             if (states["hProdigy"] == true) extra += 1 // Harmonic doubles it
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
         }),
-        Item(7, "Jeskai Ascendency", "jAscendency", "Jeskai Asc buff", 1, "noncreature", "buff",{ states ->
+        Item(7, "Jeskai Ascendency", "jAscendency", "Jeskai Asc buff", "none",1, "noncreature", "buff",{ states ->
             var extra = 0
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
         }),
-        Item(7, "whirldwind of thought", "woThought", "draw", 1, "noncreature", "buff", { states ->
+        Item(7, "whirldwind of thought", "woThought", "draw", "none",1, "noncreature", "buff", { states ->
             var extra = 0
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
         }),
-        Item(7, "Birgi", "birgi", "Birgi Red", 1, "any", "generator", { states ->
+        Item(7, "Birgi", "birgi", "Birgi Red", "none",1, "any", "generator", { states ->
             var extra = 0
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
@@ -268,7 +268,7 @@ fun GameResourceTracker() {
                                         .fillMaxHeight()
                                         .wrapContentSize()
                                 ) {
-                                    items.filter { it.type == "generator" }.forEach { item ->
+                                    items.filter { it.type == "generator" ||  it.type == "creaturegenerator"}.forEach { item ->
                                         SidePanelItem(
                                             item = item,
                                             isChecked = checkedStates[item.code] ?: false,
@@ -375,9 +375,17 @@ fun GameResourceTracker() {
                         val filteredItems = items.filter { it.resourceType == key }
                         for (item in filteredItems) {
                             if (checkedStates.filterKeys { it in item.code }.values.any { it }) {
-                                CounterColumn(key, value.value, { value.value++ }, { value.value-- }, Modifier.weight(1f))
+                                if (item.type == "creaturegenerator") {
+                                    // CounterColumn for haste variant
+                                    CounterColumn("Haste $key", gameResources.resourceMap[item.hasteResourceType]?.value ?: 0, { gameResources.resourceMap[item.hasteResourceType]?.let { it.value++ } }, { gameResources.resourceMap[item.hasteResourceType]?.let { it.value++ } }, Modifier.weight(1f))
+                                    // CounterColumn for non-haste variant
+                                    CounterColumn("Non-Haste $key", value.value, { value.value++ }, { value.value-- }, Modifier.weight(1f))
+                                } else {
+                                    CounterColumn(key, value.value, { value.value++ }, { value.value-- }, Modifier.weight(1f))
+                                }
                                 break
                             }
+
                         }
                     }
 
@@ -421,6 +429,7 @@ fun GameResourceTracker() {
                     endStep("storm", gameResources)
                     endStep("prowess", gameResources)
                     endStep("Birgi Red", gameResources)
+                    nonHaste2Haste(items, gameResources )
                 })
             }
         }
