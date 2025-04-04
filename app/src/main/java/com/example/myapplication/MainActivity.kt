@@ -1,8 +1,11 @@
 package com.example.myapplication
 
+import android.app.Activity
 import android.app.Application
+import android.graphics.drawable.ColorDrawable
 import com.example.myapplication.getItemsByTriggerType
 import android.os.Bundle
+import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.activity.ComponentActivity
@@ -24,6 +27,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -44,6 +48,7 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -65,6 +70,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.reflect.KMutableProperty0
 import com.example.myapplication.models.GameResources
@@ -83,8 +89,18 @@ class MyApp : Application()
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
+            val context = LocalContext.current
+            val window = (context as? Activity)?.window
+
+            // Prevent screen from sleeping
+            DisposableEffect(Unit) {
+                window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                onDispose {
+                    window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+            }
+
             Box(modifier = Modifier.fillMaxSize()) {
                 // Your main UI
                 GameResourceTracker()
@@ -103,6 +119,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GameResourceTracker() {
@@ -118,27 +135,27 @@ fun GameResourceTracker() {
 
     // This inits random items with item class structure
     val items = listOf(
-        Item(1, "Kykar", "kykar", "spirit", "hasteSpirit", 1, "noncreature", "creaturegenerator",{ states ->
+        Item(1, "Kykar", "kykar", "spirit", "hasteSpirit", 1, "noncreature", "creaturegenerator", R.drawable.spirit_token,{ states ->
             var extra = 0
             if (states["hProdigy"] == true) extra += 1 // Harmonic doubles it
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
         }),
         Item(2, "Harmonic Prodigy", "hProdigy", "none", "none", 0, "none", "buff",), // No direct resource, just synergy
-        Item(3, "Veyran", "veyran", "none", "none",0, "none", "buff"), // No direct resource, just synergy
-        Item(4, "Monastery Mentor", "mMentor", "monk", "hasteMonk", 1, "noncreature", "creaturegenerator",{ states ->
+        Item(3, "Veyran", "veyran", "none", "none",0, "none", "buff",), // No direct resource, just synergy
+        Item(4, "Monastery Mentor", "mMentor", "monk", "hasteMonk", 1, "noncreature", "creaturegenerator", R.drawable.monk_token, { states ->
             var extra = 0
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             if (states["hProdigy"] == true) extra += 1 // Harmonic doubles, Veyran has no effect
             extra
         }),
-        Item(5, "Storm Kiln Artist", "skArtist", "treasure", "none",1, "magecraft", "generator",{ states ->
+        Item(5, "Storm Kiln Artist", "skArtist", "treasure", "none",1, "magecraft", "generator",R.drawable.treasure_token,{ states ->
             var extra = 0
             if (states["hProdigy"] == true) extra += 1
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
         }),
-        Item(7, "Kykar Zehphyr Awakaner", "kykar-z-awak", "spirit", "hasteSpirit", 1, "noncreature", "creaturegenerator",{ states ->
+        Item(7, "Kykar Zehphyr Awakaner", "kykar-z-awak", "spirit", "hasteSpirit", 1, "noncreature", "creaturegenerator",R.drawable.spirit_token,{ states ->
             var extra = 0
             if (states["hProdigy"] == true) extra += 1 // Harmonic doubles it
             if (states["veyran"] == true) extra += 1  // Veyran adds another
@@ -147,23 +164,23 @@ fun GameResourceTracker() {
 //        Item(7, "Archmage Emritus", "aEmritus", "draw", 1, "magecraft", "buff"),
 //        Item(7, "Archmage of runes", "aRunes", "draw", 1, "instsor", "buff"),
 //        Item(7, "Ashling flame dancer", "afDancer", "discarddraw", 1, "magecraft", "buff"),
-        Item(7, "Balmor battlemage captain", "bbCaptain", "battlemage buff", "none",1, "instsor", "buff",{ states ->
+        Item(7, "Balmor battlemage captain", "bbCaptain", "battlemage buff", "none",1, "instsor", "buff",R.drawable.bbcap_token,{ states ->
             var extra = 0
             if (states["hProdigy"] == true) extra += 1 // Harmonic doubles it
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
         }),
-        Item(7, "Jeskai Ascendency", "jAscendency", "Jeskai Asc buff", "none",1, "noncreature", "buff",{ states ->
+        Item(7, "Jeskai Ascendency", "jAscendency", "Jeskai Asc buff", "none",1, "noncreature", "buff",R.drawable.jasc_token,{ states ->
             var extra = 0
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
         }),
-        Item(7, "whirldwind of thought", "woThought", "draw", "none",1, "noncreature", "buff", { states ->
+        Item(7, "whirldwind of thought", "woThought", "draw", "none",1, "noncreature", "buff",-1, { states ->
             var extra = 0
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
         }),
-        Item(7, "Birgi", "birgi", "Birgi Red", "none",1, "any", "generator", { states ->
+        Item(7, "Birgi", "birgi", "Birgi Red", "none",1, "any", "generator",R.drawable.redmana_token, { states ->
             var extra = 0
             if (states["veyran"] == true) extra += 1  // Veyran adds another
             extra
@@ -186,256 +203,316 @@ fun GameResourceTracker() {
         }
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFCBC9F9)) // Optional: distinguish the layout
-    ) {
-        // Side Panel
-        Box(
-            modifier = Modifier
-                .width(panelWidth)
-                .fillMaxHeight()
-                .background(Color.White)
-                .padding(20.dp)
-        ) {
-            Column(
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-            ) {
-                // Toggle Button
-                Button(
-                    onClick = { gameResources.isPanelExpanded.value = !gameResources.isPanelExpanded.value },
-                    modifier = Modifier
-                        .padding(bottom = 8.dp)
-                        .size(if (gameResources.isPanelExpanded.value) 50.dp else 40.dp), // Increase size for visibility
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(0.dp), // Remove default padding
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Menu, // No need for the if-else
-                        contentDescription = "Toggle Panel",
-                        tint = Color(0xFF6B68B0),
-                        modifier = Modifier.size(30.dp) // Reduce size to fit inside button
-                    )
-                }
-
-                // Panel Content (visible when expanded)
-                if (gameResources.isPanelExpanded.value) {
-                    Column (
-                        modifier = Modifier
-                            .weight(1f) // Take remaining space
-                            .verticalScroll(rememberScrollState())
-                            .fillMaxHeight(),
-                    ){
-
-                        Column(
-                            verticalArrangement = Arrangement.Top,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxSize()
-//                                .verticalScroll(rememberScrollState())
-                        ) {
-                            // Toggle Button
-                            Button(
-                                onClick = { gameResources.sectionGenerator.value = !gameResources.sectionGenerator.value },
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .width(150.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(
-                                    0xFF8480D9
-                                )
-                                ),
-                                shape = RoundedCornerShape(12.dp), // Adds rounded corners
-                                contentPadding = PaddingValues(0.dp)
-                            ) {
-                                Text(
-                                    text = "Generator",
-                                    color = Color.White, // Adjust text color as needed
-                                    fontSize = 14.sp,    // Adjust font size as needed
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .align(Alignment.CenterVertically) // Center vertically
-                                )
-                            }
-                            if (gameResources.sectionGenerator.value) {
-
-                                Column(
-                                    modifier = Modifier
-//                                        .background(Color(0x80CBC9F9)) // Set background color here
-                                        .fillMaxHeight()
-                                        .wrapContentSize()
-                                ) {
-                                    items.filter { it.type == "generator" ||  it.type == "creaturegenerator"}.forEach { item ->
-                                        SidePanelItem(
-                                            item = item,
-                                            isChecked = checkedStates[item.code] ?: false,
-                                            onCheckedChange = { newValue ->
-                                                checkedStates[item.code] = newValue
-                                                println("${item.name} is now ${if (newValue) "checked" else "unchecked"}")
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        Column(
-                            verticalArrangement = Arrangement.Top,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxSize()
-//                                .verticalScroll(rememberScrollState())
-                        ) {
-                            // Toggle Button
-                            Button(
-                                onClick = { gameResources.sectionBuff.value = !gameResources.sectionBuff.value },
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .width(150.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(
-                                    0xFF8480D9
-                                )
-                                ),
-                                shape = RoundedCornerShape(12.dp), // Adds rounded corners
-                                contentPadding = PaddingValues(0.dp)
-                            ) {
-                                Text(
-                                    text = "Buffs",
-                                    color = Color.White, // Adjust text color as needed
-                                    fontSize = 14.sp,    // Adjust font size as needed
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .align(Alignment.CenterVertically) // Center vertically
-                                )
-                            }
-                            if (gameResources.sectionBuff.value) {
-
-                                Column(
-                                    modifier = Modifier
-//                                        .background(Color(0x80CBC9F9)) // Set background color here
-                                        .fillMaxHeight()
-                                        .wrapContentSize()
-                                ) {
-                                    items.filter { it.type == "buff" }.forEach { item ->
-                                        SidePanelItem(
-                                            item = item,
-                                            isChecked = checkedStates[item.code] ?: false,
-                                            onCheckedChange = { newValue ->
-                                                checkedStates[item.code] = newValue
-                                                println("${item.name} is now ${if (newValue) "checked" else "unchecked"}")
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-//                        items.forEach { item ->
-//                            SidePanelItem(
-//                                item = item,
-//                                isChecked = checkedStates[item.code] ?: false, // Get state for this item
-//                                onCheckedChange = { newValue ->
-//                                    checkedStates[item.code] = newValue // Update state for this item
-//                                    println("${item.name} is now ${if (newValue) "checked" else "unchecked"}")
-//                                }
-//                            )
-//                        }
-                    }
-
-                }
-            }
-        }
-
-
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFCBC9F9))) {
+        // Main Content (background)
+        // Scrollable Resource Trackers
+        // Scrollable content
         Column(
             modifier = Modifier
-                .weight(1f) // Take remaining space
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.SpaceBetween // Space out children
+                .fillMaxSize()
+                .padding(horizontal = 50.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(top = 25.dp)
+
         ) {
+            MainTracker(gameResources, checkedStates, items)
+            Spacer(modifier = Modifier.height(150.dp)) // Add spacing for bottom overlay
+        }
 
-            // Scrollable Resource Trackers
-            Column(
-                modifier = Modifier
-                    .heightIn(max = 225.dp) // Set max height
-                    .verticalScroll(rememberScrollState()) // Enable scrolling
-                    .padding(top = 25.dp)
-            ) {
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth(), // Make sure FlowRow expands
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    CounterColumn("Prowess", gameResources.prowess.value, { gameResources.prowess.value++ }, { gameResources.prowess.value-- }, Modifier.weight(1f))
-                    CounterColumn("Storm", gameResources.storm.value, { gameResources.storm.value++ }, { gameResources.storm.value-- }, Modifier.weight(1f))
+        // Overlay button
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .zIndex(1f)
+                .background(Color.White.copy(alpha = 0.3f)) // 30% transparent white
+                .padding(bottom = 5.dp)
+                .fillMaxWidth()
+        ) {
+            CastButtonSection(gameResources, checkedStates, items)
+        }
+        // Floating Side Panel
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart) // Position it on the left side
+                .zIndex(1f) // Float above main content
+                .width(panelWidth)
+                .fillMaxHeight()
+//                .background(Color.White)
+                .padding(0.dp)
+//                .background(Color.White.copy(alpha = 0.5f))
 
-                    gameResources.resourceMap.forEach { (key, value) ->
-                        val anyChecked = checkedStates.filterKeys { it in key }.values.any { it }
-                        val filteredItems = items.filter { it.resourceType == key }
-                        for (item in filteredItems) {
-                            if (checkedStates.filterKeys { it in item.code }.values.any { it }) {
-                                if (item.type == "creaturegenerator") {
-                                    // CounterColumn for haste variant
-                                    CounterColumn("Haste $key", gameResources.resourceMap[item.hasteResourceType]?.value ?: 0, { gameResources.resourceMap[item.hasteResourceType]?.let { it.value++ } }, { gameResources.resourceMap[item.hasteResourceType]?.let { it.value++ } }, Modifier.weight(1f))
-                                    // CounterColumn for non-haste variant
-                                    CounterColumn("Non-Haste $key", value.value, { value.value++ }, { value.value-- }, Modifier.weight(1f))
-                                } else {
-                                    CounterColumn(key, value.value, { value.value++ }, { value.value-- }, Modifier.weight(1f))
-                                }
-                                break
-                            }
-
-                        }
-                    }
-
-                    ResourceCounterList(gameResources, checkedStates)
-                }
-            }
-
-            // Bottom Section
-            FlowRow(
-                modifier = Modifier
-                    .padding(25.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalArrangement = Arrangement.Bottom // Align content to bottom
-            ) {
-                CastColumn("Creature", {
-                    cast("any", gameResources, items, checkedStates)
-                    castGeneral("storm", gameResources)
-                })
-
-                CastColumn("Ins/Soc", {
-                    cast("noncreature", gameResources, items, checkedStates)
-                    cast("magecraft", gameResources, items, checkedStates)
-                    cast("instsor", gameResources, items, checkedStates)
-                    cast("any", gameResources, items, checkedStates)
-                    castGeneral("storm", gameResources)
-                    castGeneral("prowess", gameResources)
-                })
-
-                CastColumn("Copy Ins/Soc", {
-                    cast("magecraft", gameResources, items, checkedStates)
-                })
-
-                CastColumn("Non Creature", {
-                    cast("noncreature", gameResources, items, checkedStates)
-                    castGeneral("storm", gameResources)
-                    castGeneral("prowess", gameResources)
-                    cast("any", gameResources, items, checkedStates)
-                })
-
-                CastColumn("End Step", {
-                    endStep("storm", gameResources)
-                    endStep("prowess", gameResources)
-                    endStep("Birgi Red", gameResources)
-                    nonHaste2Haste(items, gameResources )
-                })
-            }
+        ) {
+            // Your existing side panel content here
+            SidePanel(gameResources, checkedStates, items)
         }
     }
 }
 
+@Composable
+fun SidePanel(gameResources: GameResources, checkedStates: MutableMap<String, Boolean>, items: List<Item>) {
+    val targetBackgroundColor = if (gameResources.isPanelExpanded.value) {
+        Color.White.copy(alpha = 0.7f) // 30% transparent
+    } else {
+        Color.White.copy(alpha = 0f) // Fully transparent
+    }
+    Column(
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .background(targetBackgroundColor)
+            .padding(10.dp)
+
+    ) {
+        // Toggle Button
+        Button(
+            onClick = {
+                gameResources.isPanelExpanded.value = !gameResources.isPanelExpanded.value
+                      },
+            modifier = Modifier
+                .padding(bottom = 8.dp)
+                .size(if (gameResources.isPanelExpanded.value) 50.dp else 40.dp), // Increase size for visibility
+            shape = RoundedCornerShape(12.dp),
+            contentPadding = PaddingValues(0.dp), // Remove default padding
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0f))
+        ) {
+            Icon(
+                imageVector = Icons.Default.Menu, // No need for the if-else
+                contentDescription = "Toggle Panel",
+                tint = Color(0xFF6B68B0),
+                modifier = Modifier.size(30.dp) // Reduce size to fit inside button
+            )
+        }
+
+        // Panel Content (visible when expanded)
+        if (gameResources.isPanelExpanded.value) {
+            Column (
+                modifier = Modifier
+                    .weight(1f) // Take remaining space
+                    .verticalScroll(rememberScrollState())
+//                    .background(Color.White)
+                    .fillMaxHeight(),
+            ){
+
+                Column(
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxSize()
+//                                .verticalScroll(rememberScrollState())
+                ) {
+                    // Toggle Button
+                    Button(
+                        onClick = { gameResources.sectionGenerator.value = !gameResources.sectionGenerator.value },
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .width(150.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(
+                            0xFF8480D9
+                        )
+                        ),
+                        shape = RoundedCornerShape(12.dp), // Adds rounded corners
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = "Generator",
+                            color = Color.White, // Adjust text color as needed
+                            fontSize = 14.sp,    // Adjust font size as needed
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically) // Center vertically
+                        )
+                    }
+                    if (gameResources.sectionGenerator.value) {
+
+                        Column(
+                            modifier = Modifier
+                                .background(Color(0x30FFFFFF)) // Set background color here
+                                .fillMaxHeight()
+                                .wrapContentSize()
+                        ) {
+                            items.filter { it.type == "generator" ||  it.type == "creaturegenerator"}.forEach { item ->
+                                SidePanelItem(
+                                    item = item,
+                                    isChecked = checkedStates[item.code] ?: false,
+                                    onCheckedChange = { newValue ->
+                                        checkedStates[item.code] = newValue
+                                        println("${item.name} is now ${if (newValue) "checked" else "unchecked"}")
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                Column(
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxSize()
+//                                .verticalScroll(rememberScrollState())
+                ) {
+                    // Toggle Button
+                    Button(
+                        onClick = { gameResources.sectionBuff.value = !gameResources.sectionBuff.value },
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .width(150.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(
+                            0xFF8480D9
+                        )
+                        ),
+                        shape = RoundedCornerShape(12.dp), // Adds rounded corners
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = "Buffs",
+                            color = Color.White, // Adjust text color as needed
+                            fontSize = 14.sp,    // Adjust font size as needed
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically) // Center vertically
+                        )
+                    }
+                    if (gameResources.sectionBuff.value) {
+
+                        Column(
+                            modifier = Modifier
+                                .background(Color(0x30FFFFFF)) // Set background color here
+                                .fillMaxHeight()
+                                .wrapContentSize()
+                        ) {
+                            items.filter { it.type == "buff" }.forEach { item ->
+                                SidePanelItem(
+                                    item = item,
+                                    isChecked = checkedStates[item.code] ?: false,
+                                    onCheckedChange = { newValue ->
+                                        checkedStates[item.code] = newValue
+                                        println("${item.name} is now ${if (newValue) "checked" else "unchecked"}")
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+            }
+
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun MainTracker(gameResources: GameResources, checkedStates: MutableMap<String, Boolean>, items: List<Item> ){
+        // Scrollable Resource Trackers
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth(), // Make sure FlowRow expands
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Column(
+                modifier = Modifier
+//                    .background(Color(0xFFF8F5E7)) // Set your desired background color
+                    .padding(8.dp) // Optional: add padding
+            ) {
+                Row {
+                    CounterColumn(mapOf("image" to R.drawable.prowess_token, "text" to "Prowess"), gameResources.prowess.value, { gameResources.prowess.value++ }, { gameResources.prowess.value-- }, Modifier.weight(1f))
+                    CounterColumn(mapOf("image" to R.drawable.storm_token, "text" to "Storm"), gameResources.storm.value, { gameResources.storm.value++ }, { gameResources.storm.value-- }, Modifier.weight(1f))
+                    CounterColumn(mapOf("image" to R.drawable.treasure_token, "text" to "Treasure"), gameResources.treasure.value, { gameResources.treasure.value++ }, { gameResources.treasure.value-- }, Modifier.weight(1f))
+                }
+            }
+            for ((key, value) in gameResources.resourceMap) {
+                if (key in listOf("prowess", "storm", "treasure")) {
+                    continue
+                }
+                val anyChecked = checkedStates.filterKeys { it in key }.values.any { it }
+                val filteredItems = items.filter { it.resourceType == key }
+                for (item in filteredItems) {
+                    if (checkedStates.filterKeys { it in item.code }.values.any { it }) {
+                        if (item.type == "creaturegenerator") {
+//                            Column(
+//                                modifier = Modifier
+//                                    .background(Color(0xFFF8F5E7)) // Set your desired background color
+//                                    .padding(8.dp) // Optional: add padding
+//                            ) {
+//                                Row(
+//                                    horizontalArrangement = Arrangement.spacedBy(4.dp),  // Adjust spacing between elements
+//                                    verticalAlignment = Alignment.CenterVertically,
+//                                    modifier = Modifier.fillMaxWidth()
+//                                ) {
+                                    // CounterColumn for haste variant
+//                                    Image(
+//                                        painter = painterResource(id = item.imageId),
+//                                        contentDescription = "Image in CounterColumn",
+//                                        modifier = Modifier.size(42.dp)  // Adjust size as needed
+//                                    )
+                                    CounterColumn(mapOf("image" to item.imageId, "text" to "Haste"), gameResources.resourceMap[item.hasteResourceType]?.value ?: 0, { gameResources.resourceMap[item.hasteResourceType]?.let { it.value++ } }, { gameResources.resourceMap[item.hasteResourceType]?.let { it.value-- } }, Modifier.weight(1f))
+                                    CounterColumn(mapOf("image" to item.imageId, "text" to "Non-Haste"), value.value, { value.value++ }, { value.value-- }, Modifier.weight(1f))
+
+//                                    CounterColumn("Haste $key", gameResources.resourceMap[item.hasteResourceType]?.value ?: 0, { gameResources.resourceMap[item.hasteResourceType]?.let { it.value++ } }, { gameResources.resourceMap[item.hasteResourceType]?.let { it.value-- } }, Modifier.weight(1f))
+//                                    CounterColumn("Non-Haste $key", value.value, { value.value++ }, { value.value-- }, Modifier.weight(1f))
+
+//                                }
+//                            }
+
+
+                        } else {
+                                CounterColumn(mapOf("image" to item.imageId, "text" to "$key"), value.value, { value.value++ }, { value.value-- }, Modifier.weight(1f))
+                            }
+                        }
+                        break
+                    }
+
+                }
+            }
+
+            ResourceCounterList(gameResources, checkedStates)
+        }
+
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun CastButtonSection(gameResources: GameResources, checkedStates: MutableMap<String, Boolean>, items: List<Item>){
+
+    // Bottom Section
+    FlowRow(
+        modifier = Modifier
+            .padding(horizontal = 100.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalArrangement = Arrangement.Bottom // Align content to bottom
+    ) {
+        CastColumn("Creature", {
+            cast("any", gameResources, items, checkedStates)
+            castGeneral("storm", gameResources)
+        })
+
+        CastColumn("Ins/Soc", {
+            cast("noncreature", gameResources, items, checkedStates)
+            cast("magecraft", gameResources, items, checkedStates)
+            cast("instsor", gameResources, items, checkedStates)
+            cast("any", gameResources, items, checkedStates)
+            castGeneral("storm", gameResources)
+            castGeneral("prowess", gameResources)
+        })
+
+        CastColumn("Copy Ins/Soc", {
+            cast("magecraft", gameResources, items, checkedStates)
+        })
+
+        CastColumn("Non Creature", {
+            cast("noncreature", gameResources, items, checkedStates)
+            castGeneral("storm", gameResources)
+            castGeneral("prowess", gameResources)
+            cast("any", gameResources, items, checkedStates)
+        })
+
+        CastColumn("End Step", {
+            endStep("storm", gameResources)
+            endStep("prowess", gameResources)
+            endStep("Birgi Red", gameResources)
+            nonHaste2Haste(items, gameResources )
+        })
+    }
+}
 @Composable
 fun ResourceCounterList(gameResources: GameResources, checkedStates: MutableMap<String, Boolean>) {
     var refreshTrigger by remember { mutableStateOf(false) }
@@ -493,16 +570,19 @@ fun SidePanelItem(
 
 @Composable
 fun CounterColumn(
-    label: String,
+    label: Any,
     count: Int,
     onIncrement: () -> Unit,
     onDecrement: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
+            .then(
+                if (label is String) Modifier.padding(top = 15.dp) else Modifier
+            ) // Add top padding if label is String
     ) {
         // Decrement Button with expanded hitbox
         Box(
@@ -527,16 +607,37 @@ fun CounterColumn(
             }
         }
 
-        Spacer(modifier = Modifier.width(8.dp))
 
+        // Conditionally Render Label or Image
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+
         ) {
-            Text(text = label, fontSize = 16.sp, color = Color.Black)
+            when (label) {
+                is String -> {
+                    // If label is a string, display it as Text
+                    Text(text = label, fontSize = 16.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
+                }
+                is Map<*, *> -> {
+                    // If label is a map (dict), expect keys "image" and "text"
+                    val imageRes = label["image"] as? Int
+                    val text = label["text"] as? String
+
+                    imageRes?.let {
+                        Image(
+                            painter = painterResource(id = it),
+                            contentDescription = "Image in CounterColumn",
+                            modifier = Modifier.size(42.dp)  // Adjust size as needed
+                        )
+                    }
+
+                    text?.let {
+                        // Display text below image
+                        Text(text = it, fontSize = 16.sp, color = Color.Black)
+                    }
+                }}
             Text(text = count.toString(), fontSize = 16.sp, color = Color.Black)
         }
-
-        Spacer(modifier = Modifier.width(8.dp))
 
         // Increment Button with expanded hitbox
         CircularButton(

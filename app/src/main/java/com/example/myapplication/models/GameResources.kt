@@ -13,6 +13,7 @@ data class Item(
     val baseIncrement: Int = 1, // Default increment
     val triggerType: String, // what causes this Item to generate its resource
     val type: String, // generator or buff
+    val imageId: Int = -1, // generator or buff
     val synergyRules: (Map<String, Boolean>) -> Int = { 0 }, // Additional increment based on other items
 )
 
